@@ -218,11 +218,33 @@ function App() {
 
   const addNewCanvas = () => {
     const newId = `canvas${canvases.length + 1}`;
-    setCanvases([...canvases, {
+    const newCanvas = {
       id: newId,
       name: `Formula ${canvases.length + 1}`,
       formulas: []
-    }]);
+    };
+    setCanvases([...canvases, newCanvas]);
+    setActiveCanvas(canvases.length);
+  };
+
+  const removeCanvas = (indexToRemove: number) => {
+    if (canvases.length <= 1) {
+      return;
+    }
+    
+    const newCanvases = canvases.filter((_, index) => index !== indexToRemove);
+    setCanvases(newCanvases);
+    
+    if (activeCanvas >= indexToRemove) {
+      setActiveCanvas(Math.max(0, activeCanvas - 1));
+    }
+  };
+
+  const renameCanvas = (index: number, newName: string) => {
+    const newCanvases = canvases.map((canvas, i) => 
+      i === index ? { ...canvas, name: newName } : canvas
+    );
+    setCanvases(newCanvases);
   };
 
   const removeFromFormula = (index: number) => {
@@ -332,19 +354,64 @@ function App() {
             <Typography variant="h5" component="h2" gutterBottom>
               Formulas
             </Typography>
-            <Tabs
-              value={activeCanvas}
-              onChange={(_, newValue) => setActiveCanvas(newValue)}
-              sx={{ mb: 2 }}
-            >
-              {canvases.map((canvas, index) => (
-                <Tab key={canvas.id} label={canvas.name} value={index} />
-              ))}
-            </Tabs>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
+              <Tabs 
+                value={activeCanvas}
+                onChange={(_, newValue) => setActiveCanvas(newValue)}
+                sx={{ flex: 1 }}
+              >
+                {canvases.map((canvas, index) => (
+                  <Tab
+                    key={canvas.id}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{canvas.name}</span>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeCanvas(index);
+                          }}
+                          sx={{
+                            opacity: 0.5,
+                            '&:hover': { opacity: 1 },
+                            display: canvases.length > 1 ? 'inline-flex' : 'none'
+                          }}
+                        >
+                          <X size={14} />
+                        </IconButton>
+                      </Box>
+                    }
+                    sx={{ 
+                      minHeight: 48,
+                      textTransform: 'none',
+                      '&:hover .MuiIconButton-root': { opacity: 1 }
+                    }}
+                  />
+                ))}
+              </Tabs>
+              <IconButton
+                color="primary"
+                onClick={addNewCanvas}
+                sx={{ ml: 1 }}
+                title="Add new formula"
+              >
+                <Plus />
+              </IconButton>
+            </Box>
 
             <DragDropContext onDragEnd={handleDragEnd}>
               {canvases.map((canvas, index) => (
                 <Box key={canvas.id} sx={{ display: activeCanvas === index ? 'block' : 'none' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                    <TextField
+                      size="small"
+                      value={canvas.name}
+                      onChange={(e) => renameCanvas(index, e.target.value)}
+                      sx={{ width: 200 }}
+                      placeholder="Formula name"
+                    />
+                  </Box>
                   <Droppable droppableId={canvas.id} direction="horizontal">
                     {(provided) => (
                       <Paper
